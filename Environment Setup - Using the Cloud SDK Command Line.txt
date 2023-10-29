@@ -7,13 +7,14 @@
 // Basic set up commands
 ----------------------------------------------------------------------------------------
 
-
 // You can list the active account name with this command:
 gcloud auth list
 
 // You can list the project ID with this command:
 gcloud config list project
 
+// Install ping to use later in this lab:
+sudo apt install iputils-ping
 
 ----------------------------------------------------------------------------------------
 // Type of Regions :
