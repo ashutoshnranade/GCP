@@ -14,6 +14,7 @@ gcloud auth list
 gcloud config list project
 
 // Install ping to use later in this lab:
+// Use 'sudo apt autoremove' to remove it.
 sudo apt install iputils-ping
 
 ----------------------------------------------------------------------------------------
