@@ -1,0 +1,118 @@
+######################################################################################
+## Configuring Networks via gcloud:Lab # GSP630 ##
+######################################################################################
+
+
+====================== Task 1. Create network ======================
+
+// In Cloud Shell, use the following gcloud command to create a custom mode network called labnet:
+gcloud compute networks create labnet --subnet-mode=custom
+
+
+====================== Task 2. Create a subnetwork ======================
+
+// Now create sub-network labnet-sub:
+gcloud compute networks subnets create labnet-sub \
+   --network labnet \
+   --region "us-central1" \
+   --range 10.0.0.0/28
+
+====================== Task 3. Viewing networks ======================
+
+// List the networks in your project:
+gcloud compute networks list
+
+// Use describe to view network details, such as its peering connections and subnets. 
+gcloud compute networks describe labnet
+
+
+====================== Task 4. List subnets ======================
+
+// Use this command to list all subnets in all VPC networks, in all regions:
+gcloud compute networks subnets list
+
+
+====================== Task 5. Creating firewall rules ======================
+
+// To allow access to VM instances, you must apply firewall rules.
+// Create the labnet-allow-internal firewall rule:
+
+gcloud compute firewall-rules create labnet-allow-internal \
+	--network=labnet \
+	--action=ALLOW \
+	--rules=icmp,tcp:22 \
+	--source-ranges=0.0.0.0/0
+
+
+====================== Task 6. Viewing firewall rules details ======================
+
+// Inspect the firewall rules to see its name, applicable network, and components, including whether the rule is enabled or disabled:
+gcloud compute firewall-rules describe labnet-allow-internal
+
+
+====================== Task 7. Create another network ======================
+
+// Now you'll create a another network, add firewall rules to it, then add VMs to both networks to test the ability to communicate with the networks.
+
+// * Run the following command to create the privatenet network:
+gcloud compute networks create privatenet --subnet-mode=custom
+
+// * Create the private-sub subnet:
+gcloud compute networks subnets create private-sub \
+    --network=privatenet \
+    --region="us-central1" \
+    --range 10.1.0.0/28
+
+// Create the firewall rules for privatenet
+// * Run the following command to create the privatenet-deny firewall rule:
+gcloud compute firewall-rules create privatenet-deny \
+    --network=privatenet \
+    --action=DENY \
+    --rules=icmp,tcp:22 \
+    --source-ranges=0.0.0.0/0
+
+
+// * Run the following command to list all the firewall rules (sorted by VPC network):
+gcloud compute firewall-rules list --sort-by=NETWORK
+
+
+====================== Task 8. Create VM instances ======================
+
+// Create two VM instances in the subnets:
+// pnet-vm in private-sub
+// lnet-vm in labnet-sub 
+
+
+// * Run the following command to create the pnet-vm instance in the private-sub subnet:
+gcloud compute instances create pnet-vm \
+--zone="us-central1-c" \
+--machine-type=n1-standard-1 \
+--subnet=private-sub
+
+// * Create the lnet-vm instance
+gcloud compute instances create lnet-vm \
+--zone="us-central1-c" \
+--machine-type=n1-standard-1 \
+--subnet=labnet-sub
+
+// * Now list all the VM instances (sorted by zone):
+gcloud compute instances list --sort-by=ZONE
+
+
+====================== Task 9. Explore the connectivity ======================
+
+// * Ping the external IP addresses of the VM instances to determine if you can reach the instances from the public internet.
+// This should work - lnet-vm's network has a firewall rule that allows traffic.
+// ping -c 3 34.172.3.15
+ping -c 3 <Enter lnet-vm's external IP here>
+
+
+// Repeat the command, but use pnet-vm's external IP address.
+// This should not work - nothing should be happening. pnet-vm's network has a firewall rule that denies traffic. Use Ctrl+C to end the process.
+// ping -c 3 35.193.177.117
+ping -c 3 <Enter pnet-vm's external IP here>
+
+
+######################################################################################
+## Configuring Networks via gcloud:Lab # GSP630 ##
+######################################################################################
