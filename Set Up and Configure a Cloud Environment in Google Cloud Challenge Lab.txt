@@ -121,6 +121,8 @@ sed -i s/username_goes_here/wp_user/g wp-env.yaml
 
 sed -i s/password_goes_here/stormwind_rules/g wp-env.yaml
 
+// verify with nano command if this is updated properly
+
 cd wp-k8s/
 
 kubectl create -f wp-env.yaml
@@ -137,12 +139,16 @@ kubectl create secret generic cloudsql-instance-credentials --from-file key.json
 
 ====================== Task 7. Create a WordPress deployment ======================
 
-Replace YOUR_SQL_INSTANCE with griffin-dev-db’s Instance connection name.
+// In the Cloud, Shell open the WordPress deployment YAML file.
+cd ~/wp-k8s
+nano wp-deployment.yaml
 
+// Replace YOUR_SQL_INSTANCE with griffin-dev-db’s Instance connection name.
+
+// Now run Deployment and service file in Cloud Shell. 
 kubectl create -f wp-deployment.yaml
 
 kubectl create -f wp-service.yaml
-
 
 ====================== TASK 8: Enable monitoring ======================
 
