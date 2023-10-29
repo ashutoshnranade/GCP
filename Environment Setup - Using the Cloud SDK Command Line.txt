@@ -1,0 +1,91 @@
+######################################################################################
+## Environment Setup - Using the Cloud SDK Command Line:Lab # GSP002 ##
+######################################################################################
+
+
+----------------------------------------------------------------------------------------
+// Basic set up commands
+----------------------------------------------------------------------------------------
+
+
+// You can list the active account name with this command:
+gcloud auth list
+
+// You can list the project ID with this command:
+gcloud config list project
+
+
+----------------------------------------------------------------------------------------
+// Type of Regions :
+----------------------------------------------------------------------------------------
+
+Western US	Central US	Eastern US	Western Europe	Eastern Asia
+us-west1-a	us-central1-a	us-east1-b	europe-west1-b	asia-east1-a
+us-west1-b	us-central1-b	us-east1-c	europe-west1c	asia-east1-b
+-	        us-central1-c	us-east1-d	europe-west1-d	aisia-east1-c
+-	        us-central1-f	-	-	-
+----------------------------------------------------------------------------------------
+
+
+// Set the region to <REGION>
+gcloud config set compute/region REGION
+
+// To view the project region setting, run the following command:
+gcloud config get-value compute/region
+
+// Set the zone to <ZONE>:
+gcloud config set compute/zone ZONE
+
+// To view the project zone setting, run the following command:
+gcloud config get-value compute/zone
+
+// To view the project id for your project:
+gcloud config get-value project
+
+// To view details about the project:
+gcloud compute project-info describe --project $(gcloud config get-value project)
+
+
+----------------------------------------------------------------------------------------
+// Setting environment variables
+----------------------------------------------------------------------------------------
+
+// Create an environment variable to store your Project ID:
+export PROJECT_ID=$(gcloud config get-value project)
+
+// Create an environment variable to store your Zone:
+export ZONE=$(gcloud config get-value compute/zone)
+
+// To verify that your variables were set properly, run the following commands:
+echo -e "PROJECT ID: $PROJECT_ID\nZONE: $ZONE"
+
+
+----------------------------------------------------------------------------------------
+// Create VM : eg name of vm is TestVM
+----------------------------------------------------------------------------------------
+
+// To create your VM, run the following command:
+gcloud compute instances create TestVM --machine-type e2-medium --zone $ZONE
+
+// To connect to your VM with SSH, run the following command:
+gcloud compute ssh TestVM --zone $ZONE
+
+// Add a tag to the virtual machine:
+gcloud compute instances add-tags TestVM --tags http-server,https-server
+
+
+----------------------------------------------------------------------------------------
+// Logging
+----------------------------------------------------------------------------------------
+
+// View the available logs on the system:
+gcloud logging logs list
+
+// View the logs that relate to compute resources:
+gcloud logging logs list --filter="compute"
+
+// Read the logs related to the resource type of gce_instance:
+gcloud logging read "resource.type=gce_instance" --limit 5
+
+// Read the logs for a specific virtual machine:
+gcloud logging read "resource.type=gce_instance AND labels.instance_name='TestVM'" --limit 5
