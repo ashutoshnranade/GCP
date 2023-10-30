@@ -1,0 +1,141 @@
+######################################################################################
+## Deploying a Python Flask Web Application to App Engine Flexible:Lab # GSP023 ##
+######################################################################################
+
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+
+gcloud auth list
+
+gcloud config list project
+
+====================== Task 1. Get the sample code ======================
+
+gcloud storage cp -r gs://spls/gsp023/flex_and_vision/ .
+
+cd flex_and_vision
+
+
+====================== Task 2. Authenticate API requests ======================
+
+export PROJECT_ID=$(gcloud config get-value project)
+
+
+// Create a Service Account to access the Google Cloud APIs when testing locally:
+
+gcloud iam service-accounts create qwiklab \
+  --display-name "My Qwiklab Service Account"
+
+
+// Give your newly created Service Account appropriate permissions:
+
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+--member serviceAccount:qwiklab@${PROJECT_ID}.iam.gserviceaccount.com \
+--role roles/owner
+
+
+// After creating your Service Account, create a Service Account key:
+
+gcloud iam service-accounts keys create ~/key.json \
+--iam-account qwiklab@${PROJECT_ID}.iam.gserviceaccount.com
+
+
+// Using the absolute path of the generated key, set an environment variable for your service account key:
+
+export GOOGLE_APPLICATION_CREDENTIALS="/home/${USER}/key.json"
+
+
+
+====================== Task 3. Testing the application locally ======================
+
+// 1. Create an isolated Python 3 environment named env with virtualenv:
+virtualenv -p python3 env
+
+// 2. Enter your newly created virtualenv named env:
+source env/bin/activate
+
+//3. Use pip to install dependencies for your project from the requirements.txt file:
+pip install -r requirements.txt
+
+
+-------------------------------------------------------------------------------------
+Creating an App Engine app
+-------------------------------------------------------------------------------------
+
+// 1. First, create an environment variable with your assigned region:
+AE_REGION=us-central
+
+// 2. Next, create an App Engine instance by using:
+
+gcloud app create --region=$AE_REGION
+
+
+-------------------------------------------------------------------------------------
+Creating a storage bucket
+-------------------------------------------------------------------------------------
+
+// 1. First, set the environment variable CLOUD_STORAGE_BUCKET equal to the name of your PROJECT_ID. (It is generally recommended to name your bucket the same as your PROJECT_ID for convenience purposes):
+
+export CLOUD_STORAGE_BUCKET=${PROJECT_ID}
+
+// 2. Now run the following command to create a bucket with the same name as your PROJECT_ID:
+gsutil mb gs://${PROJECT_ID}
+
+
+-------------------------------------------------------------------------------------
+Running the Application
+-------------------------------------------------------------------------------------
+
+// Execute the following command to start your application:
+
+python main.py
+
+// Once the application starts, click on the Web Preview icon Web preview icon in the Cloud Shell toolbar and choose Preview on port 8080.
+
+
+====================== Task 5. Deploying the App to App Engine Flexible ======================
+
+-------------------------------------------------------------------------------------
+App Engine Flexible uses a file called app.yaml to describe an application's deployment configuration. If this file is not present, App Engine will try to guess the deployment configuration. However, it is a good idea to provide this file.
+-------------------------------------------------------------------------------------
+
+
+// 1. Next, you will modify app.yaml using an editor of your choice vim, nano, or emacs. We will use the nano editor:
+
+nano app.yaml
+
+
+// 2. Once you have app.yaml open, replace <your-cloud-storage-bucket> with the name of your Cloud Storage bucket. (If you forgot the name of your Cloud Storage bucket, copy the Project ID from the lab details panel).
+
+// The env_variables section sets up environment variables that will be used in main.py once the application is deployed.
+
+
+// 3. Next, set your app to use manual scaling by adding this at the end of the file:
+
+manual_scaling:
+  instances: 1
+
+
+// 4. Lastly, change the python_version from 3 to 3.7 to deploy your App Engine successfully.
+
+
+// 6. Update your Cloud Build timeout:
+
+gcloud config set app/cloud_build_timeout 1000
+
+
+// 7. Deploy your app on App Engine by using gcloud:
+
+gcloud app deploy
+
+
+// 8. After the application is deployed, open the app in your web browser with the following URL:
+// https://<PROJECT_ID>.appspot.com
+
+https://qwiklabs-gcp-00-f6a308dbecda.appspot.com
+
+
+
+######################################################################################
+## Deploying a Python Flask Web Application to App Engine Flexible:Lab # GSP023 ##
+######################################################################################
