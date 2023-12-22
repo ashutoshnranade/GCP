@@ -1,0 +1,184 @@
+######################################################################################
+## Lab:Deploy Kubernetes Load Balancer Service with Terraform #GSP233 ## 
+######################################################################################
+
+-------------------------------------------------------------------------------------
+In Terraform, a Provider is the logical abstraction of an upstream API. This lab will show you how to set up a Kubernetes cluster and deploy Load Balancer type NGINX service on it.
+
+Objectives
+In this lab, you will learn how to:
+
+Deploy a Kubernetes cluster along with a service using Terraform
+-------------------------------------------------------------------------------------
+Kubernetes services
+A service is a grouping of pods that are running on the cluster. Services are "cheap" and you can have many services within the cluster. Kubernetes services can efficiently power a microservice architecture.
+
+Services provide important features that are standardized across the cluster: load-balancing, service discovery between applications, and features to support zero-downtime application deployments.
+
+Each service has a pod label query which defines the pods which will process data for the service. This label query frequently matches pods created by one or more replication controllers. Powerful routing scenarios are possible by updating a service's label query via the Kubernetes API with deployment software.
+-------------------------------------------------------------------------------------
+Why Terraform?
+While you could use kubectl or similar CLI-based tools mapped to API calls to manage all Kubernetes resources described in YAML files, orchestration with Terraform presents a few benefits:
+
+One language - You can use the same configuration language to provision the Kubernetes infrastructure and to deploy applications into it.
+Drift detection - terraform plan will always present you the difference between reality at a given time and the config you intend to apply.
+Full lifecycle management - Terraform doesn't just initially create resources, but offers a single command to create, update, and delete tracked resources without needing to inspect the API to identify those resources.
+Synchronous feedback - While asynchronous behavior is often useful, sometimes it's counter-productive as the job of identifying operation results (failures or details of created resource) is left to the user. e.g. you don't have the IP/hostname of the load balancer until it has finished provisioning, hence you can't create any DNS record pointing to it.
+Graph of relationships - Terraform understands relationships between resources which may help in scheduling - e.g. Terraform won't try to create a service in a Kubernetes cluster until the cluster exists.
+-------------------------------------------------------------------------------------
+
+
+gcloud auth list
+
+gcloud config list project
+
+
+
+====================== Task 1. Clone the sample code ======================
+
+// In Cloud Shell, start by cloning the sample code:
+
+gsutil -m cp -r gs://spls/gsp233/* .
+
+// Navigate to the tf-gke-k8s-service-lb directory:
+
+cd tf-gke-k8s-service-lb
+
+
+====================== Task 2. Understand the code ======================
+
+// Review the contents of the main.tf file:
+
+cat main.tf
+
+------------------------------------------------------------------------------------
+Variables are defined for region, zone, and network_name. These will be used to create the Kubernetes cluster.
+The Google Cloud provider will let us create resources in this project.
+There are several resources defined to create the appropriate network and cluster.
+At the end, there are some outputs which you'll see after running terraform apply.
+------------------------------------------------------------------------------------
+
+// Review the contents of the k8s.tf file:
+
+cat k8s.tf
+
+------------------------------------------------------------------------------------
+The script configures a Kubernetes provider with Terraform and creates the service, namespace and a replication_controller resource.
+The script returns an nginx service IP as an output.
+------------------------------------------------------------------------------------
+
+
+====================== Task 3. Initialize and install dependencies ======================
+
+------------------------------------------------------------------------------------
+The terraform init command is used to initialize a working directory containing the Terraform configuration files.
+
+This command performs several different initialization steps in order to prepare a working directory for use and is always safe to run multiple times, to bring the working directory up to date with changes in the configuration:
+------------------------------------------------------------------------------------
+
+terraform init
+
+terraform apply -var="region=us-east4" -var="location=us-east4-c"
+
+yes
+
+
+######################################################################################
+## Lab:Deploy Kubernetes Load Balancer Service with Terraform #GSP233 ## 
+######################################################################################
+
+###################################################################################### main.tf 
+######################################################################################
+
+variable "region" {
+  type        = string
+  description = "Region for the resource."
+}
+
+variable "location" {
+  type        = string
+  description = "Location represents region/zone for the resource."
+}
+
+variable "network_name" {
+  default = "tf-gke-k8s"
+}
+
+provider "google" {
+  region = var.region
+}
+
+resource "google_compute_network" "default" {
+  name                    = var.network_name
+  auto_create_subnetworks = false
+}
+
+resource "google_compute_subnetwork" "default" {
+  name                     = var.network_name
+  ip_cidr_range            = "10.127.0.0/20"
+  network                  = google_compute_network.default.self_link
+  region                   = var.region
+  private_ip_google_access = true
+}
+
+data "google_client_config" "current" {
+}
+
+data "google_container_engine_versions" "default" {
+  location = var.location
+}
+
+resource "google_container_cluster" "default" {
+  name               = var.network_name
+  location           = var.location
+  initial_node_count = 3
+  min_master_version = data.google_container_engine_versions.default.latest_master_version
+  network            = google_compute_subnetwork.default.name
+  subnetwork         = google_compute_subnetwork.default.name
+
+  // Use legacy ABAC until these issues are resolved: 
+  //   https://github.com/mcuadros/terraform-provider-helm/issues/56
+  //   https://github.com/terraform-providers/terraform-provider-kubernetes/pull/73
+  enable_legacy_abac = true
+
+  // Wait for the GCE LB controller to cleanup the resources.
+  // Wait for the GCE LB controller to cleanup the resources.
+  provisioner "local-exec" {
+    when    = destroy
+    command = "sleep 90"
+  }
+}
+
+output "network" {
+  value = google_compute_subnetwork.default.network
+}
+
+output "subnetwork_name" {
+  value = google_compute_subnetwork.default.name
+}
+
+output "cluster_name" {
+  value = google_container_cluster.default.name
+}
+
+output "cluster_region" {
+  value = var.region
+}
+
+output "cluster_location" {
+  value = google_container_cluster.default.location
+} 
+
+###################################################################################### k8s.tf
+######################################################################################
+
+
+
+
+
+
+
+
+
+
+
