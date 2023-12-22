@@ -1,0 +1,133 @@
+######################################################################################
+## Lab: Terraform Fundamentals## 
+######################################################################################
+
+-------------------------------------------------------------------------------------
+Key features
+Infrastructure as code
+Infrastructure is described using a high-level configuration syntax. This allows a blueprint of your data center to be versioned and treated as you would any other code. Additionally, infrastructure can be shared and re-used.
+
+Execution plans
+Terraform has a planning step in which it generates an execution plan. The execution plan shows what Terraform will do when you execute the apply command. This lets you avoid any surprises when Terraform manipulates infrastructure.
+
+Resource graph
+Terraform builds a graph of all your resources and parallelizes the creation and modification of any non-dependent resources. Because of this, Terraform builds infrastructure as efficiently as possible, and operators get insight into dependencies in their infrastructure.
+
+Change automation
+Complex changesets can be applied to your infrastructure with minimal human interaction. With the previously mentioned execution plan and resource graph, you know exactly what Terraform will change and in what order, which helps you avoid many possible human errors.
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------------
+In this lab, you will learn how to perform the following tasks:
+
+Get started with Terraform in Google Cloud.
+Install Terraform from installation binaries.
+Create a VM instance infrastructure using Terraform.
+-------------------------------------------------------------------------------------
+
+gcloud auth list
+
+gcloud config list project
+
+
+
+====================== Task 1. Verifying Terraform installation ======================
+
+terraform
+
+
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+
+====================== Task 2. Build infrastructure ======================
+
+-------------------------------------------------------------------------------------
+With Terraform installed, you can immediately start creating some infrastructure.
+
+Configuration
+The set of files used to describe infrastructure in Terraform is simply known as a Terraform configuration. In this section, you will write your first configuration to launch a single VM instance. The format of the configuration files can be found in the Terraform Language Documentation. We recommend using JSON for creating configuration files.
+
+-------------------------------------------------------------------------------------
+
+// In Cloud Shell, create an empty configuration file named instance.tf with the following command:
+
+touch instance.tf
+
+// Click Open Editor on the Cloud Shell toolbar.
+To switch between Cloud Shell and the code editor, click Open Editor or Open Terminal as required, or click Open in a new window to leave the Editor open in a separate tab.
+
+// Click the instance.tf file and add the following content in it, replacing <PROJECT_ID> with your Google Cloud project ID:
+
+resource "google_compute_instance" "terraform" {
+  project      = "qwiklabs-gcp-03-a7a10e7ca249"
+  name         = "terraform"
+  machine_type = "e2-medium"
+  zone         = "us-west1-b"
+
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-11"
+    }
+  }
+
+  network_interface {
+    network = "default"
+    access_config {
+    }
+  }
+}
+
+
+-------------------------------------------------------------------------------------
+This is a complete configuration that Terraform is ready to apply. The general structure should be intuitive and straightforward.
+
+The "resource" block in the instance.tf file defines a resource that exists within the infrastructure. A resource might be a physical component such as an VM instance.
+
+The resource block has two strings before opening the block: the resource type and the resource name. For this lab, the resource type is google_compute_instance and the name is terraform. The prefix of the type maps to the provider: google_compute_instance automatically tells Terraform that it is managed by the Google provider.
+
+Within the resource block itself is the configuration needed for the resource.
+-------------------------------------------------------------------------------------
+
+// In Cloud Shell, verify that your new file has been added and that there are no other *.tf files in your directory, because Terraform loads all of them:
+
+ls
+
+// Initialization
+// 1. Download and install the provider binary:
+
+terraform init
+
+// 2. Create an execution plan:
+
+terraform plan
+
+// Apply Changes 
+// In the same directory as the instance.tf file you created, run this command:
+
+terraform apply
+
+
+// For this case the plan looks acceptable, so type yes at the confirmation prompt to proceed.
+Executing the plan will take a few minutes because Terraform waits for the VM instance to become available.
+
+yes
+
+
+// Terraform has written some data into the terraform.tfstate file. This state file is extremely important: it keeps track of the IDs of created resources so that Terraform knows what it is managing.
+
+// In Cloud Shell, inspect the current state:
+
+terraform show
+
+
+====================== Task 3. Test your understanding ======================
+
+-------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------
+
+
+
+######################################################################################
+## Lab: Terraform Fundamentals## 
+######################################################################################
