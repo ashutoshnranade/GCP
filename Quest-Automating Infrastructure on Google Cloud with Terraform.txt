@@ -1,0 +1,417 @@
+#########################################################################################
+## Quest: Automating Infrastructure on Google Cloud with Terraform: Challenge Lab #GSP ##
+#########################################################################################
+
+-------------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------------
+
+gcloud auth list
+
+gcloud config list project
+
+====================== Task 1. Create the configuration files ======================
+
+// Task 1. Create the configuration files
+
+
+touch main.tf
+ touch variables.tf
+ mkdir modules
+ cd modules
+ mkdir instances
+ cd instances
+ touch instances.tf
+ touch outputs.tf
+ touch variables.tf
+cd ..
+mkdir storage
+cd storage
+touch storage.tf
+touch outputs.tf
+touch variables.tf
+cd
+
+
+// Add the following to the each variables.tf file, and fill in the GCP Project ID:
+----------------------------------------------------------
+variable "region" {
+ default = "us-west1"
+}
+
+variable "zone" {
+ default = "us-west1-c"
+}
+
+variable "project_id" {
+ default = "qwiklabs-gcp-03-6c1b6fa95f1c"
+}
+----------------------------------------------------------
+
+
+// Add the following to the main.tf file :
+----------------------------------------------------------
+terraform {
+  required_providers {
+    google = {
+      source = "hashicorp/google"
+      version = "3.55.0"
+    }
+  }
+}
+
+provider "google" {
+  project     = var.project_id
+  region      = var.region
+
+  zone        = var.zone
+}
+
+module "instances" {
+
+  source     = "./modules/instances"
+
+}
+----------------------------------------------------------
+
+
+terraform init
+
+
+====================== Task 2. Import infrastructure ======================
+
+// tf-instance-1 = 4922953386818809574
+// Machine type = e2-micro
+// Boot disk = debian-11-bullseye-v20231212	
+// Network interface = nic0
+
+// tf-instance-2 = 6937023981826617062
+// Machine type = e2-micro
+// Boot disk = debian-11-bullseye-v20231212	
+// Network interface = nic0
+
+// Open modules/instances/instances.tf and also add this in main.tf
+// define google_compute_instance resources matching our existing VMs, including their names and specifications.
+-----------------------------------------------------------
+resource "google_compute_instance" "tf-instance-1" {
+  name         = "tf-instance-1"
+  machine_type = "e2-micro"
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "debian-11-bullseye-v20231212"
+    }
+  }
+
+  network_interface {
+ network = "default"
+  }
+  metadata_startup_script = <<-EOT
+    #!/bin/bash
+  EOT
+  
+  allow_stopping_for_update = true
+}
+
+resource "google_compute_instance" "tf-instance-2" {
+  name         = "tf-instance-2"
+  machine_type = "e2-micro"
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "debian-11-bullseye-v20231212"
+    }
+  }
+
+  network_interface {
+ network = "default"
+  }
+metadata_startup_script = <<-EOT
+    #!/bin/bash
+  EOT
+  
+  allow_stopping_for_update = true
+}
+-----------------------------------------------------------
+
+terraform import module.instances.google_compute_instance.tf-instance-1 4922953386818809574
+
+terraform import module.instances.google_compute_instance.tf-instance-2 6937023981826617062
+
+terraform plan
+
+terraform apply
+
+====================== Task 3. Configure a remote backend ======================
+
+// Add the following code to the modules/storage/storage.tf file: also add this to main.tf file
+-------------------------------------------------------------------------------------
+resource "google_storage_bucket" "storage-bucket" {
+  name          = "tf-bucket-438739"
+  location      = "US"
+  force_destroy = true
+  uniform_bucket_level_access = true
+}
+-------------------------------------------------------------------------------------
+
+terraform init
+
+terraform apply
+
+// To add an output value for the google_storage_bucket resource in the outputs.tf file, you can do:
+
+output "storage_bucket_name" {
+  value = google_storage_bucket.storage-bucket.name
+}
+
+// update the main.tf file terraform block so it will look like the following
+
+-------------------------------------------------------------------------------------
+terraform {
+  backend "gcs" {
+    bucket  = "tf-bucket-438739"
+ prefix  = "terraform/state"
+  }  
+}
+-------------------------------------------------------------------------------------
+
+terraform init
+terraform apply
+
+====================== Task 4. Modify and update infrastructure ======================
+
+// Navigate to modules/instances/instance.tf. Replace the entire contents of the file with the following:
+// Changing the machine types as specified in the quest and adding 3rd instance
+-------------------------------------------------------------------------------------
+resource "google_compute_instance" "tf-instance-1" {
+  name         = "tf-instance-1"
+  machine_type = "e2-standard-2"
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "debian-11-bullseye-v20231212"
+    }
+  }
+
+  network_interface {
+ network = "default"
+  }
+  metadata_startup_script = <<-EOT
+    #!/bin/bash
+  EOT
+  allow_stopping_for_update = true
+}
+
+resource "google_compute_instance" "tf-instance-2" {
+  name         = "tf-instance-2"
+  machine_type = "e2-standard-2"
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "debian-11-bullseye-v20231212"
+    }
+  }
+
+  network_interface {
+ network = "default"
+  }
+metadata_startup_script = <<-EOT
+    #!/bin/bash
+  EOT 
+  allow_stopping_for_update = true
+}
+
+resource "google_compute_instance" "tf-instance-3" {
+  name         = "tf-instance-821431"
+  machine_type = "e2-standard-2"
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "debian-11-bullseye-v20231212"
+    }
+  }
+
+  network_interface {
+ network = "default"
+  }
+metadata_startup_script = <<-EOT
+    #!/bin/bash
+  EOT 
+  allow_stopping_for_update = true
+}
+-------------------------------------------------------------------------------------
+// Add these entries to main.tf as well
+
+terraform init
+
+terraform apply
+
+====================== Task 5. Taint and destroy resources ======================
+
+// Destroy the third instance tf-instance-821431 by removing the resource from the configuration file. 
+// After removing it, initialize terraform and apply the changes.
+
+terraform taint google_compute_instance.tf-instance-3
+
+terraform init
+
+terraform apply
+
+// Remove the tf-instance-3 resource from the instances.tf file and main.tf. Delete the following code chunk from the file.
+-------------------------------------------------------------------------------------
+resource "google_compute_instance" "tf-instance-3" {
+  name         = "tf-instance-821431"
+  machine_type = "e2-standard-2"
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "debian-11-bullseye-v20231212"
+    }
+  }
+
+  network_interface {
+ network = "default"
+  }
+metadata_startup_script = <<-EOT
+    #!/bin/bash
+  EOT 
+  allow_stopping_for_update = true
+}
+-------------------------------------------------------------------------------------
+
+terraform init
+
+terraform apply
+
+====================== Task 6. Use a module from the Registry ======================
+
+// Update main.tf file with following to add a new VPC
+-------------------------------------------------------------------------------------
+module "VPC" {
+  source  = "terraform-google-modules/network/google"
+  version = "~> 3.2.2"
+  # insert the 3 required variables here
+  project_id   = var.project_id
+  network_name = "tf-vpc-922232"
+  routing_mode = "GLOBAL"
+
+    subnets = [
+        {
+            subnet_name           = "subnet-01"
+            subnet_ip             = "10.10.10.0/24"
+            subnet_region         = "us-west1"
+        },
+        {
+            subnet_name           = "subnet-02"
+            subnet_ip             = "10.10.20.0/24"
+            subnet_region         = "us-west1"
+            subnet_private_access = "true"
+            subnet_flow_logs      = "true"
+            description           = "This subnet has a description"
+        }
+    ]
+}
+-------------------------------------------------------------------------------------
+
+terraform init
+
+terraform apply
+
+// navigate to the instances.tf file and update the configuration resources to connect tf-instance-1 to subnet-01 and tf-instance-2 to subnet-02
+// Update this in main.tf as well
+-------------------------------------------------------------------------------------
+resource "google_compute_instance" "tf-instance-1" {
+  name         = "tf-instance-1"
+  machine_type = "e2-standard-2"
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "debian-11-bullseye-v20231212"
+    }
+  }
+
+  network_interface {
+ network = "tf-vpc-922232"
+    subnetwork = "subnet-01"
+  }
+  metadata_startup_script = <<-EOT
+    #!/bin/bash
+  EOT
+  allow_stopping_for_update = true
+}
+
+resource "google_compute_instance" "tf-instance-2" {
+  name         = "tf-instance-2"
+  machine_type = "e2-standard-2"
+  zone         = var.zone
+
+  boot_disk {
+    initialize_params {
+      image = "debian-11-bullseye-v20231212"
+    }
+  }
+
+  network_interface {
+ network = "tf-vpc-922232"
+    subnetwork = "subnet-02"
+  }
+metadata_startup_script = <<-EOT
+    #!/bin/bash
+  EOT 
+  allow_stopping_for_update = true
+}
+-------------------------------------------------------------------------------------
+
+terraform init
+
+terraform apply
+
+====================== Task 7. Configure a firewall ======================
+
+// Create a firewall rule resource in the main.tf file, and name it tf-firewall.
+// * This firewall rule should permit the tf-vpc-922232 network to allow ingress connections on all IP ranges (0.0.0.0/0) on TCP port 80.
+// * Make sure you add the source_ranges argument with the correct IP range (0.0.0.0/0).
+// * Initialize Terraform and apply your changes.
+
+// Note: To retrieve the required network argument, you can inspect the state and find the ID or self_link of the google_compute_network resource you created. 
+// It will be in the form 
+// projects/PROJECT_ID/global/networks/tf-vpc-922232.
+-------------------------------------------------------------------------------------
+resource "google_compute_firewall" "tf-firewall" {
+  name    = "tf-firewall"
+ network = "projects/qwiklabs-gcp-03-6c1b6fa95f1c/global/networks/tf-vpc-922232"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["80"]
+  }
+
+  source_tags = ["web"]
+  source_ranges = ["0.0.0.0/0"]
+}
+-------------------------------------------------------------------------------------
+terraform init
+
+terraform apply
+
+
+====================== Connectivity test (Optional) ======================
+
+After you have created a firewall rule to allow internal connections over the VPC, you can optionally run a network connectivity test.
+
+Make sure both of your VMs are running.
+
+Navigate to Network Intelligence > Connectivity Tests. Run a connectivity test on the two VMs to verify that they are reachable. You have now validated the connectivity between the instances!
+
+Note: Ensure that the Network Management API is successfully enabled, if it is not, click Enable.
+
+#########################################################################################
+## Quast: Automating Infrastructure on Google Cloud with Terraform: Challenge Lab #GSP ##
+#########################################################################################
